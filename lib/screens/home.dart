@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 import '../model/todo.dart';
 import '../constants/colors.dart';
@@ -12,13 +14,13 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final todosList = ToDo.todoList();
+  List<ToDo> todosList = [];
   List<ToDo> _foundToDo = [];
   final _todoController = TextEditingController();
 
   @override
   void initState() {
-    _foundToDo = todosList;
+    _loadToDosFromStorage();
     super.initState();
   }
 
@@ -132,12 +134,14 @@ class _HomeState extends State<Home> {
     setState(() {
       todo.isDone = !todo.isDone;
     });
+    _saveToDosToStorage(); // Save todos after changing completion status
   }
 
   void _deleteToDoItem(String id) {
     setState(() {
       todosList.removeWhere((item) => item.id == id);
     });
+    _saveToDosToStorage(); // Save todos after deleting one
   }
 
   void _addToDoItem(String toDo) {
@@ -145,7 +149,9 @@ class _HomeState extends State<Home> {
       todosList.add(ToDo(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         todoText: toDo,
+        isDone: false, // Initialize new todos as not done
       ));
+      _saveToDosToStorage(); // Save todos after adding a new one
     });
     _todoController.clear();
   }
@@ -177,7 +183,7 @@ class _HomeState extends State<Home> {
       child: TextField(
         onChanged: (value) => _runFilter(value),
         decoration: InputDecoration(
-          contentPadding: EdgeInsets.all(0),
+          contentPadding: EdgeInsets.all(4),
           prefixIcon: Icon(
             Icons.search,
             color: tdBlack,
@@ -207,13 +213,33 @@ class _HomeState extends State<Home> {
         ),
         Container(
           height: 40,
-          width: 40,
+          width: 45,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(100),
             child: Image.asset('assets/images/avatar.jpeg'),
           ),
         ),
       ]),
     );
+  }
+
+  // Load todos from storage
+  void _loadToDosFromStorage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String storedTodos = prefs.getString('todos') ?? '[]';
+    Iterable decoded = jsonDecode(storedTodos);
+    List<ToDo> todos = decoded.map((json) => ToDo.fromJson(json)).toList();
+
+    setState(() {
+      todosList = todos;
+      _foundToDo = todosList;
+    });
+  }
+
+  // Save todos to storage
+  void _saveToDosToStorage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String encoded = jsonEncode(todosList);
+    prefs.setString('todos', encoded);
   }
 }

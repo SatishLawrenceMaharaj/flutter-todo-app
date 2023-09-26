@@ -51,8 +51,9 @@ class ToDoItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(5),
           ),
           child: IconButton(
+            padding: EdgeInsets.all(5),
             color: Colors.white,
-            iconSize: 18,
+            iconSize: 15,
             icon: Icon(Icons.delete),
             onPressed: () {
               // print('Clicked on delete icon');
